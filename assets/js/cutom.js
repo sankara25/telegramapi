@@ -47,16 +47,24 @@ $('#but_add_bot').click(function() {
 
 function get_api_data(method_type)  
 {	
+    var telegram_bot = $('#sel_telegram_bot').val();
+    var data = "telegram_bot="+telegram_bot+"&method_type="+method_type;
+    var message = 'get_bot_message';
     
-	var telegram_bot = $('#sel_telegram_bot').val();
-	
+    if(method_type == 'setWebhook')
+    {
+        var webhook_url = encodeURI($('#txt_bot_webhook_url').val()); 
+        var data = "telegram_bot="+telegram_bot+"&method_type="+method_type+"&webhook_url="+webhook_url;
+        var message = 'get_webhook_message';
+    }
+    
 	$.ajax({  
 			type: "POST",
-			url: base_url + 'api/v1/bot/getme/',  
-			data: {'telegram_bot': telegram_bot, 'method_type':method_type},  
+			url: base_url + 'api/v1/bot/'+method_type+'/',  
+			data: data,  
 			dataType: "html",
 			success: function(data){ // <-- note the parameter here, not in your code
-				$('#get_bot_message').html(data);
+				$('#'+message).html(data);
 			}
 		});
 	

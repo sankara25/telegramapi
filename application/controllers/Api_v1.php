@@ -32,6 +32,16 @@ class Api_v1 extends CI_Controller {
 		
 	}
 	
+	public function add_bot()
+	{
+	    $this->load->model('api_v1_model');
+	    $data['get_telegram_bot'] = $this->api_v1_model->get_telegram_bot();
+	    
+		$this->load->view('common/header.tpl');
+		$this->load->view('api/add_bot.tpl',$data);
+		$this->load->view('common/footer.tpl');
+	}
+	
 	public function bot($page = NULL)
 	{
 		if($page == 'add')
@@ -85,15 +95,46 @@ class Api_v1 extends CI_Controller {
 				echo $this->go_to_url($bot_token,$method_type); 
 			}
 		}
+		
+		elseif($page == 'setWebhook')
+		{
+		    $this->load->library('form_validation');
+			$this->form_validation->set_rules('telegram_bot', 'Bot', 'required');
+			$this->form_validation->set_rules('webhook_url', 'Webhook Url', 'required');
+			if($this->form_validation->run() === FALSE)
+			{
+				$message = validation_errors();
+				echo json_encode(array("status"=>"200","response"=>$message));
+			}
+			else
+			{
+			    $telegram_bot = $_POST['telegram_bot'];
+			    $method_type = $_POST['method_type'];
+			    $webhook_url = $_POST['webhook_url'];
+			    $this->load->model('api_v1_model');
+			    $bot_token = '';
+				$get_telegram_token = $this->api_v1_model->get_telegram_token($telegram_bot);
+				if($get_telegram_token->num_rows() > 0)
+				{
+				    $bot_token = $get_telegram_token->row()->bot_token;
+				}
+				
+				$data_json = json_encode(array('url'=>$webhook_url));
+				
+				echo $this->go_to_url($bot_token,$method_type,$data_json); 
+			}
+		}
 	}
 	
-	public function go_to_url($bot_token = NULL, $method_type = NULL)
+	public function go_to_url($bot_token = NULL, $method_type = NULL, $data_json = NULL)
 	{
 	    $url = 'https://api.telegram.org/bot'.$bot_token.'/'.$method_type;
-        $curl = curl_init($url);   
-       
+	    $curl = curl_init($url);   
         
-        
+        if(isset($data_json))
+        {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $data_json);
+        }
         curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         $result = curl_exec($curl);
